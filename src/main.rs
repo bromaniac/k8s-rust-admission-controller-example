@@ -1,24 +1,24 @@
 use std::{net::SocketAddr, path::PathBuf};
 
 use kube::{
-    core::{
-        admission::{AdmissionRequest, AdmissionResponse, AdmissionReview},
-        DynamicObject, Status,
-    },
     Resource, ResourceExt,
+    core::{
+        DynamicObject, Status,
+        admission::{AdmissionRequest, AdmissionResponse, AdmissionReview},
+    },
 };
 
 use axum::{
+    Router,
     response::Json,
     routing::{get, post},
-    Router,
 };
 
-use axum_server::tls_rustls::RustlsConfig;
 use axum_server::Handle;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+use axum_server::tls_rustls::RustlsConfig;
+use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 #[tokio::main]
 async fn main() {
@@ -31,10 +31,8 @@ async fn main() {
 
     // configure certificate and private key used by https
     let config = RustlsConfig::from_pem_file(
-        PathBuf::from("/certs")
-            .join("tls.crt"),
-        PathBuf::from("/certs")
-            .join("tls.key"),
+        PathBuf::from("/certs").join("tls.crt"),
+        PathBuf::from("/certs").join("tls.key"),
     )
     .await
     .unwrap();
@@ -110,10 +108,11 @@ async fn mutate(
             value: serde_json::Value::String(r#"snacka-kubernetes"#.into()),
         }));
 
-        return Json(json!(resp
-            .with_patch(json_patch::Patch(patches))
-            .unwrap()
-            .into_review()));
+        return Json(json!(
+            resp.with_patch(json_patch::Patch(patches))
+                .unwrap()
+                .into_review()
+        ));
     }
     Json(json!(resp.into_review()))
 }
